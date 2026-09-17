@@ -1,0 +1,1442 @@
+<!-- =========================================================
+     FILE: index.html
+     AWS Serverless Employee Management System
+
+     APIs:
+     POST   /register
+     GET    /employees
+     PUT    /employees/{id}
+     DELETE /employees/{id}
+
+     API Gateway:
+     https://b70981n5vh.execute-api.ap-south-1.amazonaws.com/prod
+========================================================= -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Employee Management System</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .header h1 {
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #6b7280;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 7px;
+            font-weight: bold;
+            color: #374151;
+        }
+
+        .form-group input {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #2563eb;
+        }
+
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            padding: 11px 18px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-edit {
+            background: #f59e0b;
+            color: white;
+            margin-right: 5px;
+        }
+
+        .btn-edit:hover {
+            background: #d97706;
+        }
+
+        .btn-delete {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #b91c1c;
+        }
+
+        .btn-refresh {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-refresh:hover {
+            background: #047857;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 7px;
+            display: none;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 13px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        th {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        td {
+            color: #4b5563;
+        }
+
+        .id-cell {
+            font-size: 12px;
+            word-break: break-all;
+            max-width: 180px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #6b7280;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .section-header h2 {
+            margin-bottom: 0;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.55);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            padding: 25px;
+            border-radius: 12px;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .status {
+            margin-top: 15px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        @media (max-width: 800px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            table {
+                min-width: 800px;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="header">
+
+        <h1>AWS Employee Management System</h1>
+
+        <p>
+            Serverless CRUD Application using
+            S3, API Gateway, Lambda, SQS and DynamoDB
+        </p>
+
+    </div>
+
+
+    <!-- =====================================================
+         ADD EMPLOYEE
+    ====================================================== -->
+
+    <div class="card">
+
+        <h2>Add Employee</h2>
+
+        <form id="employeeForm">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="name">
+                        Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="name"
+                        placeholder="Enter employee name"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="email">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        placeholder="Enter employee email"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="department">
+                        Department
+                    </label>
+
+                    <input
+                        type="text"
+                        id="department"
+                        placeholder="Enter department"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="buttons">
+
+                <button
+                    type="submit"
+                    class="btn-primary"
+                    id="addButton"
+                >
+                    Add Employee
+                </button>
+
+
+                <button
+                    type="button"
+                    class="btn-secondary"
+                    onclick="clearForm()"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+
+            <div
+                id="formMessage"
+                class="message"
+            ></div>
+
+        </form>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         EMPLOYEE LIST
+    ====================================================== -->
+
+    <div class="card">
+
+        <div class="section-header">
+
+            <h2>Employee List</h2>
+
+            <button
+                class="btn-refresh"
+                onclick="loadEmployees()"
+            >
+                Refresh Employees
+            </button>
+
+        </div>
+
+
+        <div
+            id="status"
+            class="status"
+        >
+            Loading employees...
+        </div>
+
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+
+                        <th>Name</th>
+
+                        <th>Email</th>
+
+                        <th>Department</th>
+
+                        <th>Actions</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="employeeTableBody">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     UPDATE EMPLOYEE MODAL
+========================================================= -->
+
+<div
+    id="editModal"
+    class="modal"
+>
+
+    <div class="modal-content">
+
+        <h2>Update Employee</h2>
+
+
+        <input
+            type="hidden"
+            id="editId"
+        >
+
+
+        <div class="form-group">
+
+            <label for="editName">
+                Name
+            </label>
+
+            <input
+                type="text"
+                id="editName"
+                required
+            >
+
+        </div>
+
+
+        <br>
+
+
+        <div class="form-group">
+
+            <label for="editEmail">
+                Email
+            </label>
+
+            <input
+                type="email"
+                id="editEmail"
+                required
+            >
+
+        </div>
+
+
+        <br>
+
+
+        <div class="form-group">
+
+            <label for="editDepartment">
+                Department
+            </label>
+
+            <input
+                type="text"
+                id="editDepartment"
+                required
+            >
+
+        </div>
+
+
+        <div class="modal-buttons">
+
+            <button
+                class="btn-primary"
+                onclick="updateEmployee()"
+            >
+                Update Employee
+            </button>
+
+
+            <button
+                class="btn-secondary"
+                onclick="closeEditModal()"
+            >
+                Cancel
+            </button>
+
+        </div>
+
+
+        <div
+            id="editMessage"
+            class="message"
+        ></div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+    // =========================================================
+    // API GATEWAY URL
+    // =========================================================
+
+    const API_URL =
+        "https://e8w1nszkgl.execute-api.ap-south-1.amazonaws.com/prod";
+
+
+    // =========================================================
+    // PAGE LOAD
+    // =========================================================
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            loadEmployees();
+
+        }
+    );
+
+
+    // =========================================================
+    // SHOW MESSAGE
+    // =========================================================
+
+    function showMessage(
+        elementId,
+        message,
+        type
+    ) {
+
+        const element =
+            document.getElementById(elementId);
+
+        element.textContent = message;
+
+        element.className =
+            "message " + type;
+
+        element.style.display = "block";
+
+    }
+
+
+    // =========================================================
+    // HIDE MESSAGE
+    // =========================================================
+
+    function hideMessage(elementId) {
+
+        const element =
+            document.getElementById(elementId);
+
+        element.style.display = "none";
+
+    }
+
+
+    // =========================================================
+    // CLEAR ADD FORM
+    // =========================================================
+
+    function clearForm() {
+
+        document
+            .getElementById("employeeForm")
+            .reset();
+
+        hideMessage("formMessage");
+
+    }
+
+
+    // =========================================================
+    // POST - ADD EMPLOYEE
+    // employee-producer → SQS → employee-consumer
+    // =========================================================
+
+    document
+        .getElementById("employeeForm")
+        .addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                const name =
+                    document
+                        .getElementById("name")
+                        .value
+                        .trim();
+
+
+                const email =
+                    document
+                        .getElementById("email")
+                        .value
+                        .trim();
+
+
+                const department =
+                    document
+                        .getElementById("department")
+                        .value
+                        .trim();
+
+
+                const addButton =
+                    document.getElementById(
+                        "addButton"
+                    );
+
+
+                addButton.disabled = true;
+
+                addButton.textContent =
+                    "Adding...";
+
+
+                hideMessage("formMessage");
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `${API_URL}/register`,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body: JSON.stringify({
+                                    name: name,
+                                    email: email,
+                                    department:
+                                        department
+                                })
+                            }
+                        );
+
+
+                    const result =
+                        await response.json();
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            result.error ||
+                            result.message ||
+                            "Failed to add employee"
+                        );
+
+                    }
+
+
+                    showMessage(
+                        "formMessage",
+                        "Employee added successfully. Processing through SQS...",
+                        "success"
+                    );
+
+
+                    clearForm();
+
+
+                    /*
+                     * POST is asynchronous:
+                     *
+                     * Producer
+                     *      ↓
+                     * SQS
+                     *      ↓
+                     * Consumer
+                     *      ↓
+                     * DynamoDB
+                     *
+                     * Give Lambda/SQS some time before
+                     * refreshing the employee list.
+                     */
+
+                    setTimeout(
+                        loadEmployees,
+                        2000
+                    );
+
+
+                }
+                catch (error) {
+
+                    console.error(
+                        "POST Error:",
+                        error
+                    );
+
+
+                    showMessage(
+                        "formMessage",
+                        "Error: " +
+                        error.message,
+                        "error"
+                    );
+
+                }
+                finally {
+
+                    addButton.disabled =
+                        false;
+
+                    addButton.textContent =
+                        "Add Employee";
+
+                }
+
+            }
+        );
+
+
+
+    // =========================================================
+    // GET - LOAD EMPLOYEES
+    // get-employees → DynamoDB
+    // =========================================================
+
+    async function loadEmployees() {
+
+        const status =
+            document.getElementById(
+                "status"
+            );
+
+
+        const tableBody =
+            document.getElementById(
+                "employeeTableBody"
+            );
+
+
+        status.textContent =
+            "Loading employees...";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `${API_URL}/employees`,
+                    {
+                        method: "GET"
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    result.error ||
+                    result.message ||
+                    "Failed to load employees"
+                );
+
+            }
+
+
+            /*
+             * API response is expected to be
+             * an array of employees.
+             */
+
+            let employees = result;
+
+
+            /*
+             * Some API configurations may return
+             * JSON string inside body.
+             */
+
+            if (
+                result &&
+                result.body
+            ) {
+
+                employees =
+                    typeof result.body === "string"
+                        ? JSON.parse(result.body)
+                        : result.body;
+
+            }
+
+
+            if (
+                !Array.isArray(employees)
+            ) {
+
+                employees = [];
+
+            }
+
+
+            renderEmployees(
+                employees
+            );
+
+
+            status.textContent =
+                `${employees.length} employee(s) found`;
+
+        }
+        catch (error) {
+
+            console.error(
+                "GET Error:",
+                error
+            );
+
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="empty">
+                        Failed to load employees.
+                        <br><br>
+                        ${escapeHtml(error.message)}
+                    </td>
+                </tr>
+            `;
+
+
+            status.textContent =
+                "Error loading employees";
+
+        }
+
+    }
+
+
+
+    // =========================================================
+    // DISPLAY EMPLOYEES
+    // =========================================================
+
+    function renderEmployees(
+        employees
+    ) {
+
+        const tableBody =
+            document.getElementById(
+                "employeeTableBody"
+            );
+
+
+        tableBody.innerHTML = "";
+
+
+        if (
+            employees.length === 0
+        ) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td
+                        colspan="5"
+                        class="empty"
+                    >
+                        No employees found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+
+        }
+
+
+        employees.forEach(
+            function (employee) {
+
+                const row =
+                    document.createElement(
+                        "tr"
+                    );
+
+
+                row.innerHTML = `
+
+                    <td class="id-cell">
+                        ${escapeHtml(
+                            employee.id || ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            employee.name || ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            employee.email || ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            employee.department || ""
+                        )}
+                    </td>
+
+                    <td>
+
+                        <button
+                            class="btn-edit"
+                            onclick='openEditModal(
+                                ${JSON.stringify(employee)}
+                            )'
+                        >
+                            Edit
+                        </button>
+
+
+                        <button
+                            class="btn-delete"
+                            onclick='deleteEmployee(
+                                "${escapeJs(employee.id || "")}"
+                            )'
+                        >
+                            Delete
+                        </button>
+
+                    </td>
+
+                `;
+
+
+                tableBody.appendChild(
+                    row
+                );
+
+            }
+        );
+
+    }
+
+
+
+    // =========================================================
+    // OPEN UPDATE MODAL
+    // =========================================================
+
+    function openEditModal(
+        employee
+    ) {
+
+        document
+            .getElementById("editId")
+            .value =
+            employee.id || "";
+
+
+        document
+            .getElementById("editName")
+            .value =
+            employee.name || "";
+
+
+        document
+            .getElementById("editEmail")
+            .value =
+            employee.email || "";
+
+
+        document
+            .getElementById("editDepartment")
+            .value =
+            employee.department || "";
+
+
+        hideMessage(
+            "editMessage"
+        );
+
+
+        document
+            .getElementById("editModal")
+            .style.display =
+            "flex";
+
+    }
+
+
+
+    // =========================================================
+    // CLOSE UPDATE MODAL
+    // =========================================================
+
+    function closeEditModal() {
+
+        document
+            .getElementById("editModal")
+            .style.display =
+            "none";
+
+        hideMessage(
+            "editMessage"
+        );
+
+    }
+
+
+
+    // =========================================================
+    // PUT - UPDATE EMPLOYEE
+    // employee-producer → SQS → employee-consumer
+    // =========================================================
+
+    async function updateEmployee() {
+
+        const id =
+            document
+                .getElementById("editId")
+                .value;
+
+
+        const name =
+            document
+                .getElementById("editName")
+                .value
+                .trim();
+
+
+        const email =
+            document
+                .getElementById("editEmail")
+                .value
+                .trim();
+
+
+        const department =
+            document
+                .getElementById("editDepartment")
+                .value
+                .trim();
+
+
+        if (
+            !id ||
+            !name ||
+            !email ||
+            !department
+        ) {
+
+            showMessage(
+                "editMessage",
+                "Please fill all fields.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `${API_URL}/employees/${encodeURIComponent(id)}`,
+                    {
+                        method: "PUT",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            name: name,
+                            email: email,
+                            department:
+                                department
+                        })
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    result.error ||
+                    result.message ||
+                    "Failed to update employee"
+                );
+
+            }
+
+
+            showMessage(
+                "editMessage",
+                "Employee update request sent successfully. Processing through SQS...",
+                "success"
+            );
+
+
+            /*
+             * Close modal after short delay.
+             */
+
+            setTimeout(
+                function () {
+
+                    closeEditModal();
+
+                    loadEmployees();
+
+                },
+                2000
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "PUT Error:",
+                error
+            );
+
+
+            showMessage(
+                "editMessage",
+                "Error: " +
+                error.message,
+                "error"
+            );
+
+        }
+
+    }
+
+
+
+    // =========================================================
+    // DELETE - DELETE EMPLOYEE
+    // employee-producer → SQS → employee-consumer
+    // =========================================================
+
+    async function deleteEmployee(
+        id
+    ) {
+
+        if (!id) {
+
+            alert(
+                "Employee ID is missing."
+            );
+
+            return;
+
+        }
+
+
+        const confirmed =
+            confirm(
+                "Are you sure you want to delete this employee?"
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `${API_URL}/employees/${encodeURIComponent(id)}`,
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    result.error ||
+                    result.message ||
+                    "Failed to delete employee"
+                );
+
+            }
+
+
+            alert(
+                "Delete request sent successfully. Processing through SQS..."
+            );
+
+
+            /*
+             * Wait for:
+             *
+             * employee-producer
+             *        ↓
+             *      SQS
+             *        ↓
+             * employee-consumer
+             *        ↓
+             *    DynamoDB
+             */
+
+            setTimeout(
+                loadEmployees,
+                2000
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "DELETE Error:",
+                error
+            );
+
+
+            alert(
+                "Delete Error: " +
+                error.message
+            );
+
+        }
+
+    }
+
+
+
+    // =========================================================
+    // ESCAPE HTML
+    // Prevent unsafe HTML rendering
+    // =========================================================
+
+    function escapeHtml(
+        value
+    ) {
+
+        return String(value)
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
+    }
+
+
+
+    // =========================================================
+    // ESCAPE JAVASCRIPT STRING
+    // =========================================================
+
+    function escapeJs(
+        value
+    ) {
+
+        return String(value)
+            .replace(
+                /\\/g,
+                "\\\\"
+            )
+            .replace(
+                /"/g,
+                '\\"'
+            )
+            .replace(
+                /'/g,
+                "\\'"
+            )
+            .replace(
+                /\n/g,
+                "\\n"
+            )
+            .replace(
+                /\r/g,
+                "\\r"
+            );
+
+    }
+
+
+
+    // =========================================================
+    // CLOSE MODAL WHEN CLICKING OUTSIDE
+    // =========================================================
+
+    window.addEventListener(
+        "click",
+        function (event) {
+
+            const modal =
+                document.getElementById(
+                    "editModal"
+                );
+
+
+            if (
+                event.target === modal
+            ) {
+
+                closeEditModal();
+
+            }
+
+        }
+    );
+
+</script>
+
+
+</body>
+
+</html>
